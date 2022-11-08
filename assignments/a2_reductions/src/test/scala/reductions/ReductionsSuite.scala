@@ -23,15 +23,18 @@ class ReductionsSuite extends munit.FunSuite:
    * LINE OF SIGHT *
    *****************/
 
-//  import LineOfSight.*
-//  test("lineOfSight should correctly handle an array of size 4") {
-//    val output = new Array[Float](4)
-//    lineOfSight(Array[Float](0f, 1f, 8f, 9f), output)
-//    assertEquals(output.toList, List(0f, 1f, 4f, 4f))
-//  }
+  import LineOfSight.*
+  test("lineOfSight should correctly handle an array of size 4") {
+    val output = new Array[Float](4)
+    lineOfSight(Array[Float](0f, 1f, 8f, 9f), output)
+    assertEquals(output.toList, List(0f, 1f, 4f, 4f))
+  }
 
-
-
+  test("parLineOfSight should correctly handle an array of size 4") {
+    val output = new Array[Float](4)
+    parLineOfSight(Array[Float](0f, 1f, 8f, 9f), output, 2)
+    assertEquals(output.toList, List(0f, 1f, 4f, 4f))
+  }
 
   /*******************************
    * PARALLEL COUNT CHANGE SUITE *

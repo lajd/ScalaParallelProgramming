@@ -1,7 +1,5 @@
 import scala.collection.mutable.Stack
 
-import reductions._
-
 object ParallelParenthesesBalancing:
   val openBracket: Char = '('
   val closedBracket: Char = ')'
@@ -104,3 +102,103 @@ val t3 = System.nanoTime()
 val seqElapsed = (t3 - t2) / (1.0e6)
 
 println(s"Sequential Elapsed: $seqElapsed ms")
+
+
+/////////////////////////////////////////////////////////////
+val input = Array[Float](0, 1, 3, 5, 1, 5, 7, 9, 15, 10)
+val output = new Array[Float](10)
+
+val tangentRatio = (v: Float, i: Int) => if (i > 0) then  (v.toFloat / i) else 0
+
+def lineOfSight(input: Array[Float], output: Array[Float]): Unit =
+  require(input.length == output.length, "Input and output must have equal length")
+
+  def _updateOutput(v: Float, i: Int, m: Float, o: Array[Float]): Float =
+    val newMax = tangentRatio(v, i).max(m)
+    o(i) = newMax
+    newMax
+
+  var maxSoFar = 0.toFloat
+  for ((v, i) <- input.zipWithIndex) {
+    maxSoFar = _updateOutput(v, i, maxSoFar, output)
+  }
+
+lineOfSight(input, output)
+
+assert(output.max == 1.875)
+
+def upsweepSequential(input: Array[Float], from: Int, until: Int): Float =
+  input.slice(from, until).zipWithIndex.map((v, i) => tangentRatio(v, from + i)).max
+
+assert(upsweepSequential(input, 0, input.length) == 1.875)
+assert(upsweepSequential(input, 1, 2) == 1)
+
+
+enum Tree(val maxPrevious: Float):
+  case Node(left: Tree, right: Tree) extends Tree(left.maxPrevious.max(right.maxPrevious))
+  case Leaf(from: Int, until: Int, override val maxPrevious: Float) extends Tree(maxPrevious)
+
+def upsweep(input: Array[Float], from: Int, end: Int,
+            threshold: Int): Tree =
+  val delta = end - from
+  val midpoint = from + (delta / 2)
+  delta match {
+    case leaf if delta < threshold => Tree.Leaf(from, end, upsweepSequential(input, from, end))
+    case _ =>
+      val par = parallel(
+        upsweep(input, from, midpoint, threshold),
+        upsweep(input, midpoint, end, threshold)
+      )
+      Tree.Node(par._1, par._2)
+  }
+
+val testTree = upsweep(input, 0, input.length, 3)
+
+
+def downsweepSequential(input: Array[Float], output: Array[Float],
+                        startingAngle: Float, from: Int, until: Int): Unit =
+
+  val useMax = upsweepSequential(input, from, until).max(startingAngle)
+  for (i <- from until until)
+      output(i) = useMax
+
+def downsweep(input: Array[Float], output: Array[Float],
+              startingAngle: Float, tree: Tree): Unit =
+  tree match {
+    case Tree.Node(left, right) =>
+      parallel(
+        downsweep(input, output, startingAngle, left),
+        // right nodes use a starting value of left.maxPrevious.max(startingAngle)
+        downsweep(input, output, left.maxPrevious.max(startingAngle), right),
+      )
+    case Tree.Leaf(from, until, _) =>
+      downsweepSequential(input, output, startingAngle, from, until)
+  }
+
+
+/** Compute the line-of-sight in parallel. */
+def parLineOfSight(input: Array[Float], output: Array[Float],
+                   threshold: Int): Unit =
+
+  val tree = upsweep(input, 0, input.length, threshold)
+  downsweep(input, output, 0, tree)
+
+
+val threshold = 5
+val output1 = new Array[Float](input.length)
+val output2 = new Array[Float](input.length)
+
+parLineOfSight(input, output1, threshold)
+lineOfSight(input, output2)
+
+// Sequential
+val testInput = Array(0f, 1f, 8f, 9f)
+val testOutput = new Array[Float](testInput.length)
+val expectedOutput = Array(0f, 1f, 4f, 4f)
+lineOfSight(testInput, testOutput)
+assert(testOutput.toList == expectedOutput.toList)
+
+// Parallel
+val testOutput2 = new Array[Float](testInput.length)
+parLineOfSight(testInput, testOutput2, 2)
+assert(testOutput2.toList == expectedOutput.toList)
