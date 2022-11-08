@@ -3,9 +3,23 @@ package reductions
 import java.util.concurrent.*
 import scala.collection.*
 import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory
+import scala.collection.mutable.Stack
 
 class ReductionsSuite extends munit.FunSuite:
-  /*****************
+
+  trait TestChars:
+    val longLength = 1000000
+    val longChars = new Array[Char](longLength)
+    val longThreshold = 10000
+
+    longChars(50) = '('
+    longChars(500) = ')'
+    longChars(5000) = '('
+    longChars(50000) = ')'
+    longChars(500000) = '('
+
+
+/*****************
    * LINE OF SIGHT *
    *****************/
 
@@ -77,44 +91,77 @@ class ReductionsSuite extends munit.FunSuite:
   }
 
 
-//  /**********************************
-//   * PARALLEL PARENTHESES BALANCING *
-//   **********************************/
-//
-//  import ParallelParenthesesBalancing.*
-//
-//  test("balance should work for empty string") {
-//    def check(input: String, expected: Boolean) =
-//      assert(balance(input.toArray) == expected,
-//        s"balance($input) should be $expected")
-//
-//    check("", true)
-//  }
-//
-//  test("balance should work for string of length 1") {
-//    def check(input: String, expected: Boolean) =
-//      assert(balance(input.toArray) == expected,
-//        s"balance($input) should be $expected")
-//
-//    check("(", false)
-//    check(")", false)
-//    check(".", true)
-//  }
-//
-//  test("balance should work for string of length 2") {
-//    def check(input: String, expected: Boolean) =
-//      assert(balance(input.toArray) == expected,
-//        s"balance($input) should be $expected")
-//
-//    check("()", true)
-//    check(")(", false)
-//    check("((", false)
-//    check("))", false)
-//    check(".)", false)
-//    check(".(", false)
-//    check("(.", false)
-//    check(").", false)
-//  }
+  /**********************************
+   * PARALLEL PARENTHESES BALANCING *
+   **********************************/
+
+  import ParallelParenthesesBalancing.*
+
+  test("balance should work for empty string") {
+    def check(input: String, expected: Boolean) =
+      assert(balance(input.toArray) == expected,
+        s"balance($input) should be $expected")
+
+    check("", true)
+  }
+
+  test("balance should work for string of length 1") {
+    def check(input: String, expected: Boolean) =
+      assert(balance(input.toArray) == expected,
+        s"balance($input) should be $expected")
+
+    check("(", false)
+    check(")", false)
+    check(".", true)
+  }
+
+  test("balance should work for string of length 2") {
+    def check(input: String, expected: Boolean) =
+      assert(balance(input.toArray) == expected,
+        s"balance($input) should be $expected")
+
+    check("()", true)
+    check(")(", false)
+    check("((", false)
+    check("))", false)
+    check(".)", false)
+    check(".(", false)
+    check("(.", false)
+    check(").", false)
+  }
+
+  test("parBalance should work for string of length 1") {
+    def check(input: String, expected: Boolean) =
+      assert(parBalance(input.toArray, 1) == expected,
+        s"balance($input) should be $expected")
+
+    check("(", false)
+    check(")", false)
+    check(".", true)
+  }
+
+  test("parBalance should work for string of length 2") {
+    def check(input: String, expected: Boolean) =
+      assert(parBalance(input.toArray, 1) == expected,
+        s"balance($input) should be $expected")
+
+    check("()", true)
+    check(")(", false)
+    check("((", false)
+    check("))", false)
+    check(".)", false)
+    check(".(", false)
+    check("(.", false)
+    check(").", false)
+  }
+
+  test("parBalance should work for long strings") {
+    new TestChars:
+      val segmentStacks = ParallelParenthesesBalancing._parTraverse(longChars, longThreshold, 0, longChars.length)
+      val reducedStacks= ParallelParenthesesBalancing._reduceStacks(segmentStacks)
+      assert(reducedStacks == Stack('('))
+  }
+
 
 
   import scala.concurrent.duration.*
