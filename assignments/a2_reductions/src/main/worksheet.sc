@@ -1,5 +1,7 @@
 import scala.collection.mutable.Stack
 
+import reductions._
+
 object ParallelParenthesesBalancing:
   val openBracket: Char = '('
   val closedBracket: Char = ')'
@@ -143,7 +145,7 @@ def upsweep(input: Array[Float], from: Int, end: Int,
   val delta = end - from
   val midpoint = from + (delta / 2)
   delta match {
-    case leaf if delta < threshold => Tree.Leaf(from, end, upsweepSequential(input, from, end))
+    case leaf if delta <= threshold => Tree.Leaf(from, end, upsweepSequential(input, from, end))
     case _ =>
       val par = parallel(
         upsweep(input, from, midpoint, threshold),
@@ -157,10 +159,13 @@ val testTree = upsweep(input, 0, input.length, 3)
 
 def downsweepSequential(input: Array[Float], output: Array[Float],
                         startingAngle: Float, from: Int, until: Int): Unit =
-
-  val useMax = upsweepSequential(input, from, until).max(startingAngle)
-  for (i <- from until until)
-      output(i) = useMax
+// We only update the output array when from < end
+  if (from < until) {
+    var maxPrefixAngle = startingAngle
+    for (i <- from until until)
+      maxPrefixAngle = maxPrefixAngle.max(tangentRatio(input(i), i))
+      output(i) = maxPrefixAngle
+  }
 
 def downsweep(input: Array[Float], output: Array[Float],
               startingAngle: Float, tree: Tree): Unit =
@@ -179,8 +184,8 @@ def downsweep(input: Array[Float], output: Array[Float],
 /** Compute the line-of-sight in parallel. */
 def parLineOfSight(input: Array[Float], output: Array[Float],
                    threshold: Int): Unit =
-
-  val tree = upsweep(input, 0, input.length, threshold)
+  output(0) = 0  // Explicitly set output(0) to 0
+  val tree = upsweep(input, 1, input.length, threshold)
   downsweep(input, output, 0, tree)
 
 
@@ -190,6 +195,13 @@ val output2 = new Array[Float](input.length)
 
 parLineOfSight(input, output1, threshold)
 lineOfSight(input, output2)
+
+
+val output3 = new Array[Float](4)
+parLineOfSight(Array[Float](0f, 1f, 8f, 9f), output3, 2)
+assert(output3.toList == List(0f, 1f, 4f, 4f))
+
+
 
 // Sequential
 val testInput = Array(0f, 1f, 8f, 9f)

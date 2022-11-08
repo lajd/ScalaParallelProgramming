@@ -79,7 +79,11 @@ object ParallelCountChange extends ParallelCountChangeInterface:
       countChange(money, coins)
     } else {
       // Parallel case
-      parCountChange(money - coins.head, coins, threshold) +  parCountChange(money, coins.tail, threshold)
+      val par = parallel(
+        parCountChange(money - coins.head, coins, threshold),
+        parCountChange(money, coins.tail, threshold)
+      )
+      par._1 + par._2
     }
 
   /** Threshold heuristic based on the starting money. */

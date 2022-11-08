@@ -48,7 +48,7 @@ object LineOfSight extends LineOfSightInterface:
     }
 
   def upsweepSequential(input: Array[Float], from: Int, until: Int): Float =
-    input.slice(from, until).zipWithIndex.map((v, i) => tangentRatio(v, from + i)).max
+    if (from >= until) then 0f else input.slice(from, until).zipWithIndex.map((v, i) => tangentRatio(v, from + i)).max
 
   /** Traverses the part of the array starting at `from` and until `end`, and
    *  returns the reduction tree for that part of the array.
@@ -63,7 +63,7 @@ object LineOfSight extends LineOfSightInterface:
     val delta = end - from
     val midpoint = from + (delta / 2)
     delta match {
-      case leaf if delta < threshold => Tree.Leaf(from, end, upsweepSequential(input, from, end))
+      case leaf if delta <= threshold => Tree.Leaf(from, end, upsweepSequential(input, from, end))
       case _ =>
         val par = parallel(
           upsweep(input, from, midpoint, threshold),
@@ -78,10 +78,13 @@ object LineOfSight extends LineOfSightInterface:
    */
   def downsweepSequential(input: Array[Float], output: Array[Float],
                           startingAngle: Float, from: Int, until: Int): Unit =
-
-    val useMax = upsweepSequential(input, from, until).max(startingAngle)
-    for (i <- from until until)
-      output(i) = useMax
+    // We only update the output array when from < end
+    if (from < until) {
+      var maxPrefixAngle = startingAngle
+      for (i <- from until until)
+        maxPrefixAngle = maxPrefixAngle.max(tangentRatio(input(i), i))
+        output(i) = maxPrefixAngle
+    }
 
   /** Pushes the maximum angle in the prefix of the array to each leaf of the
    *  reduction `tree` in parallel, and then calls `downsweepSequential` to write
@@ -103,7 +106,7 @@ object LineOfSight extends LineOfSightInterface:
   /** Compute the line-of-sight in parallel. */
   def parLineOfSight(input: Array[Float], output: Array[Float],
                      threshold: Int): Unit =
-
+    output(0) = 0  // Explicitly set output(0) to 0
     val tree = upsweep(input, 0, input.length, threshold)
     downsweep(input, output, 0, tree)
 
