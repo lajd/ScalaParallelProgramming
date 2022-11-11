@@ -36,59 +36,59 @@ class BarnesHutSuite extends munit.FunSuite:
     assert(quad.total == 1, s"${quad.total} should be 1")
   }
 
-//
-//  test("Fork with 3 empty quadrants and 1 leaf (nw)") {
-//    val b = Body(123f, 18f, 26f, 0f, 0f)
-//    val nw = Leaf(17.5f, 27.5f, 5f, Seq(b))
-//    val ne = Empty(22.5f, 27.5f, 5f)
-//    val sw = Empty(17.5f, 32.5f, 5f)
-//    val se = Empty(22.5f, 32.5f, 5f)
-//    val quad = Fork(nw, ne, sw, se)
-//
-//    assert(quad.centerX == 20f, s"${quad.centerX} should be 20f")
-//    assert(quad.centerY == 30f, s"${quad.centerY} should be 30f")
-//    assert(quad.mass ~= 123f, s"${quad.mass} should be 123f")
-//    assert(quad.massX ~= 18f, s"${quad.massX} should be 18f")
-//    assert(quad.massY ~= 26f, s"${quad.massY} should be 26f")
-//    assert(quad.total == 1, s"${quad.total} should be 1")
-//  }
-//
-//  test("Empty.insert(b) should return a Leaf with only that body (2pts)") {
-//    val quad = Empty(51f, 46.3f, 5f)
-//    val b = Body(3f, 54f, 46f, 0f, 0f)
-//    val inserted = quad.insert(b)
-//    inserted match
-//      case Leaf(centerX, centerY, size, bodies) =>
-//        assert(centerX == 51f, s"$centerX should be 51f")
-//        assert(centerY == 46.3f, s"$centerY should be 46.3f")
-//        assert(size == 5f, s"$size should be 5f")
-//        assert(bodies == Seq(b), s"$bodies should contain only the inserted body")
-//      case _ =>
-//        fail("Empty.insert() should have returned a Leaf, was $inserted")
-//  }
-//
-//  // test cases for Body
-//
-//  test("Body.updated should do nothing for Empty quad trees") {
-//    val b1 = Body(123f, 18f, 26f, 0f, 0f)
-//    val body = b1.updated(Empty(50f, 60f, 5f))
-//
-//    assertEquals(body.xspeed, 0f, precisionThreshold)
-//    assertEquals(body.yspeed, 0f, precisionThreshold)
-//  }
-//
-//  test("Body.updated should take bodies in a Leaf into account (2pts)") {
-//    val b1 = Body(123f, 18f, 26f, 0f, 0f)
-//    val b2 = Body(524.5f, 24.5f, 25.5f, 0f, 0f)
-//    val b3 = Body(245f, 22.4f, 41f, 0f, 0f)
-//
-//    val quad = Leaf(15f, 30f, 20f, Seq(b2, b3))
-//
-//    val body = b1.updated(quad)
-//
-//    assert(body.xspeed ~= 12.587037f)
-//    assert(body.yspeed ~= 0.015557117f)
-//  }
+
+  test("Fork with 3 empty quadrants and 1 leaf (nw)") {
+    val b = Body(123f, 18f, 26f, 0f, 0f)
+    val nw = Leaf(17.5f, 27.5f, 5f, Seq(b))
+    val ne = Empty(22.5f, 27.5f, 5f)
+    val sw = Empty(17.5f, 32.5f, 5f)
+    val se = Empty(22.5f, 32.5f, 5f)
+    val quad = Fork(nw, ne, sw, se)
+
+    assert(quad.centerX == 20f, s"${quad.centerX} should be 20f")
+    assert(quad.centerY == 30f, s"${quad.centerY} should be 30f")
+    assert(quad.mass ~= 123f, s"${quad.mass} should be 123f")
+    assert(quad.massX ~= 18f, s"${quad.massX} should be 18f")
+    assert(quad.massY ~= 26f, s"${quad.massY} should be 26f")
+    assert(quad.total == 1, s"${quad.total} should be 1")
+  }
+
+  test("Empty.insert(b) should return a Leaf with only that body (2pts)") {
+    val quad = Empty(51f, 46.3f, 5f)
+    val b = Body(3f, 54f, 46f, 0f, 0f)
+    val inserted = quad.insert(b)
+    inserted match
+      case Leaf(centerX, centerY, size, bodies) =>
+        assert(centerX == 51f, s"$centerX should be 51f")
+        assert(centerY == 46.3f, s"$centerY should be 46.3f")
+        assert(size == 5f, s"$size should be 5f")
+        assert(bodies == Seq(b), s"$bodies should contain only the inserted body")
+      case _ =>
+        fail("Empty.insert() should have returned a Leaf, was $inserted")
+  }
+
+  // test cases for Body
+
+  test("Body.updated should do nothing for Empty quad trees") {
+    val b1 = Body(123f, 18f, 26f, 0f, 0f)
+    val body = b1.updated(Empty(50f, 60f, 5f))
+
+    assertEquals(body.xspeed, 0f, precisionThreshold)
+    assertEquals(body.yspeed, 0f, precisionThreshold)
+  }
+
+  test("Body.updated should take bodies in a Leaf into account (2pts)") {
+    val b1 = Body(123f, 18f, 26f, 0f, 0f)
+    val b2 = Body(524.5f, 24.5f, 25.5f, 0f, 0f)
+    val b3 = Body(245f, 22.4f, 41f, 0f, 0f)
+
+    val quad = Leaf(15f, 30f, 20f, Seq(b2, b3))
+
+    val body = b1.updated(quad)
+
+    assert(body.xspeed ~= 12.587037f)
+    assert(body.yspeed ~= 0.015557117f)
+  }
 //
 //  // test cases for sector matrix
 //

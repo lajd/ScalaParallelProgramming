@@ -82,12 +82,12 @@ case class Fork(
   // Mean of quad massX
   val massX: Float =
     if (total == 0f) centerX
-    else forkQuads.foldLeft(0f)((sum, quad) =>  sum + quad.massX * quad.centerX) / 4
+    else forkQuads.foldLeft(0f)((sum, quad) =>  sum + quad.mass * quad.massX) / mass
 
   // Mean of quad massY
   val massY: Float =
     if (total == 0f) centerY
-    else forkQuads.foldLeft(0f)((sum, quad) =>  sum + quad.massY * quad.centerY) / 4
+    else forkQuads.foldLeft(0f)((sum, quad) =>  sum + quad.mass * quad.massY) / mass
 
   override def spatiallyContains(b: Body): Boolean =
     forkQuads.map(q => q.spatiallyContains(b)).contains(true)
@@ -182,9 +182,19 @@ class Body(val mass: Float, val x: Float, val y: Float, val xspeed: Float, val y
     def traverse(quad: Quad): Unit = (quad: Quad) match
       case Empty(_, _, _) =>
         // no force
-      case Leaf(_, _, _, bodies) =>
+      case Leaf(_, _, _, bodies) => bodies.foreach(b =>
+        addForce(b.mass, b.x, b.y)
+      )
         // add force contribution of each body by calling addForce
       case Fork(nw, ne, sw, se) =>
+        val dist = distance(quad.massX, quad.massY, x, y)
+        val singlePointApprox = (quad.size / dist) < theta
+        if (singlePointApprox) {
+          // Approxiamte as single point
+          addForce(quad.mass, quad.massX, quad.massY)
+        } else {
+          List(nw, ne, sw, se).foreach(traverse)
+        }
         // see if node is far enough from the body,
         // or recursion is needed
 
