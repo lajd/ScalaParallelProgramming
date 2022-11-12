@@ -12,10 +12,18 @@ import scala.collection.parallel.CollectionConverters.*
 class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics):
 
   def updateBoundaries(boundaries: Boundaries, body: Body): Boundaries =
-    ???
+    boundaries.minX = Math.min(boundaries.minX, body.x)
+    boundaries.maxX = Math.max(boundaries.maxX, body.x)
+    boundaries.minY = Math.min(boundaries.minY, body.y)
+    boundaries.maxY = Math.max(boundaries.maxY, body.y)
+    boundaries
 
   def mergeBoundaries(a: Boundaries, b: Boundaries): Boundaries =
-    ???
+    a.minX = Math.min(a.minX, b.minX)
+    a.minY = Math.min(a.minY, b.minY)
+    a.maxX = Math.max(a.maxX, b.maxX)
+    a.maxY = Math.max(a.maxY, b.maxY)
+    a
 
   def computeBoundaries(bodies: coll.Seq[Body]): Boundaries = timeStats.timed("boundaries") {
     val parBodies = bodies.par
@@ -26,7 +34,18 @@ class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics):
   def computeSectorMatrix(bodies: coll.Seq[Body], boundaries: Boundaries): SectorMatrix = timeStats.timed("matrix") {
     val parBodies = bodies.par
     parBodies.tasksupport = taskSupport
-    ???
+
+    def seqOp(sectorMat: SectorMatrix, body: Body): SectorMatrix =
+      sectorMat += body
+      sectorMat
+
+    def comboOp(sectorMat1: SectorMatrix, sectorMat2: SectorMatrix): SectorMatrix =
+      sectorMat1.combine(sectorMat2)
+      sectorMat1
+
+    parBodies.aggregate(
+      new SectorMatrix(Boundaries(), SECTOR_PRECISION)
+    )(seqOp, comboOp)
   }
 
   def computeQuad(sectorMatrix: SectorMatrix): Quad = timeStats.timed("quad") {
@@ -36,7 +55,7 @@ class Simulator(val taskSupport: TaskSupport, val timeStats: TimeStatistics):
   def updateBodies(bodies: coll.Seq[Body], quad: Quad): coll.Seq[Body] = timeStats.timed("update") {
     val parBodies = bodies.par
     parBodies.tasksupport = taskSupport
-    ???
+    parBodies.map(b => b.updated(quad)).seq
   }
 
   def eliminateOutliers(bodies: coll.Seq[Body], sectorMatrix: SectorMatrix, quad: Quad): coll.Seq[Body] = timeStats.timed("eliminate") {

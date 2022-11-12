@@ -189,14 +189,15 @@ class Body(val mass: Float, val x: Float, val y: Float, val xspeed: Float, val y
       case Fork(nw, ne, sw, se) =>
         val dist = distance(quad.massX, quad.massY, x, y)
         val singlePointApprox = (quad.size / dist) < theta
+        // see if node is far enough from the body,
+        // or recursion is needed
         if (singlePointApprox) {
           // Approxiamte as single point
           addForce(quad.mass, quad.massX, quad.massY)
         } else {
           List(nw, ne, sw, se).foreach(traverse)
         }
-        // see if node is far enough from the body,
-        // or recursion is needed
+
 
     traverse(quad)
 
@@ -212,17 +213,34 @@ val SECTOR_PRECISION = 8
 
 class SectorMatrix(val boundaries: Boundaries, val sectorPrecision: Int) extends SectorMatrixInterface:
   val sectorSize = boundaries.size / sectorPrecision
-  val matrix = new Array[ConcBuffer[Body]](sectorPrecision * sectorPrecision)
+
+  def newSector =
+    new Array[ConcBuffer[Body]](sectorPrecision * sectorPrecision)
+
+  val matrix = newSector
   for i <- 0 until matrix.length do matrix(i) = ConcBuffer()
 
+  def sectorCoordsFromBody(b: Body): (Int, Int) =
+    // The body can be outside of the bounds, in which case
+    // we find the closest sector.
+    val clampedX = Math.min(Math.max(b.x, boundaries.minX), boundaries.maxX)
+    val clampedY = Math.min(Math.max(b.y, boundaries.minY), boundaries.maxY)
+    ((clampedX / sectorSize).floor.toInt, (clampedY / sectorSize).floor.toInt)
+
   def +=(b: Body): SectorMatrix =
-    ???
+    val (sectorX, sectorY) = sectorCoordsFromBody(b)
+    this(sectorX, sectorY) += b
     this
+
 
   def apply(x: Int, y: Int) = matrix(y * sectorPrecision + x)
 
   def combine(that: SectorMatrix): SectorMatrix =
-    ???
+    // Combine sector matrices
+    // This method assumes sectors of same dimension, same precision
+    for (i <- 0 until matrix.length)
+      this.matrix(i) = this.matrix(i).combine(that.matrix(i))
+    this
 
   def toQuad(parallelism: Int): Quad =
     def BALANCING_FACTOR = 4
